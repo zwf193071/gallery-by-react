@@ -1,0 +1,32 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: #f4f6f9;
+  color: #222;
+  font-family: 'Raleway', sans-serif;
+}
+
+ul, li {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+li {
+  padding: 3px 0;
+  display: inline-block;
+}
+
+label {
+  margin-left: 5px;
+}
+.app .gallery{
+  margin: 0 auto;
+  width: 65%;
+  transition: all 1s ease;
+}
+@media (max-width: 1024px) {
+  .app .gallery{
+    width: 100%;
+  }
+}
