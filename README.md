@@ -1,6 +1,6 @@
-React Carousel Image Gallery
+<p align="center">React Carousel Image Gallery</p>
 
-Gallery by React is a React component for building image galleries and carousels
+<p align="center">:Fire: Gallery by React is a React component for building image galleries and carousels :Fire:</p>
 
 > Author：zwf193071
 
