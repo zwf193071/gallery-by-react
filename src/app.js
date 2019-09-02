@@ -9,7 +9,9 @@ import '~/style/index.css';
 class App extends React.Component {
     constructor() {
         super();
-        this.state = {};
+        this.state = {
+            showBullets: true
+        };
         this.images = [
             {
                 original: require('~/assets/image/1.jpg'),
@@ -42,6 +44,7 @@ class App extends React.Component {
             <section className='app'>
                 <Gallery
                     items={this.images}
+                    showBullets={this.state.showBullets}
                 ></Gallery>
             </section>
         )
