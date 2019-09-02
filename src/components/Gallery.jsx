@@ -21,7 +21,8 @@ export default class Gallery extends React.Component {
         renderRightNav: PropTypes.func,
         useTranslate3D: PropTypes.bool,
         lazyLoad: PropTypes.bool,
-        infinite: PropTypes.bool
+        infinite: PropTypes.bool,
+        showBullets: PropTypes.bool
     }
     static defaultProps = {
         items: [],
@@ -30,6 +31,7 @@ export default class Gallery extends React.Component {
         useTranslate3D: true,
         lazyLoad: false,
         infinite: true,
+        showBullets: false,
         renderLeftNav: (onClick, disabled) => {
             return (
                 <button
@@ -232,9 +234,12 @@ export default class Gallery extends React.Component {
             infinite,
             lazyLoad
         } = this.props;
+
         const slideLeft = this._slideLeft;
         const slideRight = this._slideRight;
-        let slides = []
+
+        let slides = [];
+        let bullets = [];
 
         this.props.items.forEach((item, index) => {
             const alignment = this._getAlignmentClassName(index);
@@ -264,6 +269,29 @@ export default class Gallery extends React.Component {
             } else {
                 slides.push(slide);
             }
+
+            if (this.props.showBullets) {
+                const bulletOnClick = event => {
+                    if (item.bulletOnClick) {
+                        item.bulletOnClick({item, itemIndex: index, currentIndex});
+                    }
+                    return this.slideToIndex.call(this, index, event);
+                }
+                bullets.push(
+                    <button
+                        key={index}
+                        type='button'
+                        className={[
+                            'gallery-bullet',
+                            currentIndex === index ? 'active' : '',
+                            item.bulletClass || ''
+                        ].join(' ')}
+                        onClick={bulletOnClick}
+                        aria-pressed={currentIndex === index ? 'true' : 'false'}
+                        aria-label={`Go to Slide ${index + 1}`}
+                    ></button>
+                )
+            }
         });
         const slideWrapper = (
             <div className="gallery-slide-wrapper">
@@ -288,6 +316,18 @@ export default class Gallery extends React.Component {
                         <div className='gallery-slides'>
                             {slides}
                         </div>
+                }
+                {
+                    this.props.showBullets &&
+                    <div className='gallery-bullets'>
+                        <div
+                            className='gallery-bullets-container'
+                            role='navigation'
+                            aria-label='Bullet Navigation'
+                        >
+                            {bullets}
+                        </div>
+                    </div>
                 }
             </div>
         );
