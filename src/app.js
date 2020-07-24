@@ -45,6 +45,7 @@ class App extends React.Component {
                 <Gallery
                     items={this.images}
                     showBullets={this.state.showBullets}
+                    autoPlay={true}
                 ></Gallery>
             </section>
         )
