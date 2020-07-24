@@ -1,33 +1,37 @@
 import React from 'react';
-import { Swipeable, LEFT, RIGHT } from 'react-swipeable';
-// import throttle from 'lodash.throttle';
-// import debounce from 'lodash.debounce';
+import { Swipeable } from 'react-swipeable';
 import PropTypes from 'prop-types';
 
 export default class Gallery extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            currentIndex: props.startIndex
+            currentIndex: props.startIndex,
+            isPlaying: false // 是否正在自动放映
         }
         if (props.lazyLoad) {
             this._lazyLoaded = [];
         }
     }
     static propTypes = {
+        autoPlay: PropTypes.bool,
         startIndex: PropTypes.number,
         slideDuration: PropTypes.number,
+        slideInterval: PropTypes.number,
         renderLeftNav: PropTypes.func,
         renderRightNav: PropTypes.func,
         useTranslate3D: PropTypes.bool,
         lazyLoad: PropTypes.bool,
         infinite: PropTypes.bool,
+        onPause: PropTypes.func,
         showBullets: PropTypes.bool
     }
     static defaultProps = {
+        autoPlay: false,
         items: [],
         startIndex: 0,
         slideDuration: 450,
+        slideInterval: 3000,
         useTranslate3D: true,
         lazyLoad: false,
         infinite: true,
@@ -66,12 +70,49 @@ export default class Gallery extends React.Component {
         }
     }
     componentDidMount() {
+        if (this.props.autoPlay) {
+            this.play();
+        }
         window.addEventListener('keydown', this._handleKeyDown);
     }
     componentWillUnmount() {
         window.removeEventListener('keydown', this._handleKeyDown);
         if (this._transitionTimer) {
             window.clearTimeout(this._transitionTimer);
+        }
+        if (this._intervalId) {
+            window.clearInterval(this._intervalId);
+            this._intervalId = null;
+        }
+    }
+    play(callback = true) {
+        if (!this._intervalId) {
+            const { slideInterval, slideDuration } = this.props;
+            this.setState({ isPlaying: true });
+            this._intervalId = window.setInterval(() => {
+                if (!this.props.infinite && !this._canSlideRight()) {
+                    this.pause();
+                } else {
+                    this.slideToIndex(this.state.currentIndex + 1);
+                }
+            }, Math.max(slideInterval, slideDuration));
+
+            if (this.props.onPlay && callback) {
+                this.props.onPlay(this.state.currentIndex);
+            }
+        }
+
+    }
+
+    pause(callback = true) {
+        if (this._intervalId) {
+            window.clearInterval(this._intervalId);
+            this._intervalId = null;
+            this.setState({ isPlaying: false });
+
+            if (this.props.onPause && callback) {
+                this.props.onPause(this.state.currentIndex);
+            }
         }
     }
     slideToIndex = (index, event) => {
