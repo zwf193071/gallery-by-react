@@ -7,6 +7,7 @@ export default class Gallery extends React.Component {
         super(props);
         this.state = {
             currentIndex: props.startIndex,
+            isFullscreen: false,
             isPlaying: false // 是否正在自动放映
         }
         if (props.lazyLoad) {
@@ -18,12 +19,14 @@ export default class Gallery extends React.Component {
         startIndex: PropTypes.number,
         slideDuration: PropTypes.number,
         slideInterval: PropTypes.number,
+        showFullscreenButton: PropTypes.bool,
         renderLeftNav: PropTypes.func,
         renderRightNav: PropTypes.func,
         useTranslate3D: PropTypes.bool,
         lazyLoad: PropTypes.bool,
         infinite: PropTypes.bool,
         onPause: PropTypes.func,
+        onScreenChange: PropTypes.func,
         showBullets: PropTypes.bool
     }
     static defaultProps = {
@@ -32,6 +35,7 @@ export default class Gallery extends React.Component {
         startIndex: 0,
         slideDuration: 450,
         slideInterval: 3000,
+        showFullscreenButton: true,
         useTranslate3D: true,
         lazyLoad: false,
         infinite: true,
@@ -57,6 +61,17 @@ export default class Gallery extends React.Component {
                     aria-label='Next Slide'
                 />
             )
+        },
+        renderFullscreenButton: (onClick, isFullscreen) => {
+            return (
+                <button
+                    type='button'
+                    className={
+                        `gallery-fullscreen-button${isFullscreen ? ' active' : ''}`}
+                    onClick={onClick}
+                    aria-label='Open Fullscreen'
+                />
+            );
         }
     }
     componentDidUpdate(prevProps, prevState) {
@@ -74,6 +89,16 @@ export default class Gallery extends React.Component {
             this.play();
         }
         window.addEventListener('keydown', this._handleKeyDown);
+
+        const prefix = ['fullscreenchange', 'mozfullscreenchange', 'webkitfullscreenchange', 'msfullscreenchange'];
+
+        // 监听全屏事件，动态更改isFullScreen
+        prefix.forEach(item => {
+            document.addEventListener(item, () => {
+                const fullscreenFlag = document.fullScreen || document.mozFullScreen || document.webkitIsFullScreen;
+                this.setState({ isFullscreen: fullscreenFlag});
+            });
+        });
     }
     componentWillUnmount() {
         window.removeEventListener('keydown', this._handleKeyDown);
@@ -135,6 +160,34 @@ export default class Gallery extends React.Component {
             }, this._onSliding);
         }
     }
+    fullScreen() {
+        const gallery = this._imageGallery;
+
+        if (gallery.requestFullscreen) {
+            gallery.requestFullscreen();
+        } else if (gallery.msRequestFullscreen) {
+            gallery.msRequestFullscreen();
+        } else if (gallery.mozRequestFullScreen) {
+            gallery.mozRequestFullScreen();
+        } else if (gallery.webkitRequestFullscreen) {
+            gallery.webkitRequestFullscreen();
+        }
+
+        this.setState({ isFullscreen: true });
+
+    }
+    exitFullScreen() {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
+        this.setState({ isFullscreen: false });
+    }
     _onSliding = () => {
         const { isTransitioning } = this.state;
         this._transitionTimer = window.setTimeout(() => {
@@ -155,6 +208,10 @@ export default class Gallery extends React.Component {
                 break;
             case RIGHT_ARROW:
                 this._slideRight();
+            case ESC_KEY:
+                if (this.state.isFullscreen) {
+                    this.exitFullScreen();
+                }
         }
     }
     _slideLeft = (event) => {
@@ -267,18 +324,24 @@ export default class Gallery extends React.Component {
             </div>
         )
     }
+    _toggleFullScreen = () => {
+        if (this.state.isFullscreen) {
+            this.exitFullScreen();
+        } else {
+            this.fullScreen();
+        }
+    };
     render() {
         const {
-            currentIndex
+            currentIndex,
+            isFullscreen
         } = this.state;
         const {
             infinite,
             lazyLoad
         } = this.props;
-
         const slideLeft = this._slideLeft;
         const slideRight = this._slideRight;
-
         let slides = [];
         let bullets = [];
 
@@ -337,6 +400,10 @@ export default class Gallery extends React.Component {
         const slideWrapper = (
             <div className="gallery-slide-wrapper">
                 {
+                    this.props.showFullscreenButton &&
+                    this.props.renderFullscreenButton(this._toggleFullScreen, isFullscreen)
+                }
+                {
                     this._canNavigate() ?
                         [
                             <span key='navigation'>
@@ -373,8 +440,12 @@ export default class Gallery extends React.Component {
             </div>
         );
         return (
-            <div className="gallery" aria-live="polite">
-                <div className="gallery-content">
+            <div
+                ref={i => this._imageGallery = i}
+                className="gallery"
+                aria-live="polite"
+            >
+                <div className={`gallery-content${isFullscreen ? ' fullscreen' : ''}`}>
                     {slideWrapper}
                 </div>
             </div>
